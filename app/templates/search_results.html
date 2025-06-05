@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Clinic Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Search Results</li>
+                </ol>
+            </nav>
+            
+            <h2><i class="fas fa-search me-2"></i>Search Results</h2>
+            {% if query %}
+            <p class="text-muted">
+                Showing results for "<strong>{{ query }}</strong>" in <strong>{{ search_type.title() }}</strong>
+                ({{ results|length }} result{{ 's' if results|length != 1 else '' }} found)
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('main.search') }}">
+                        <div class="row align-items-end">
+                            <div class="col-md-5">
+                                <label for="q" class="form-label">Search Query</label>
+                                <input type="text" class="form-control" id="q" name="q" 
+                                       value="{{ query }}" placeholder="Enter search terms...">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="type" class="form-label">Search Type</label>
+                                <select class="form-select" id="type" name="type">
+                                    <option value="patients" {{ 'selected' if search_type == 'patients' else '' }}>Patients</option>
+                                    <option value="appointments" {{ 'selected' if search_type == 'appointments' else '' }}>Appointments</option>
+                                    <option value="medical_records" {{ 'selected' if search_type == 'medical_records' else '' }}>Medical Records</option>
+                                    <option value="doctors" {{ 'selected' if search_type == 'doctors' else '' }}>Doctors</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-2"></i>Search
+                                </button>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-times me-2"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="row">
+        <div class="col-12">
+            {% if results %}
+                {% if search_type == 'patients' %}
+                    <!-- Patients Results -->
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Patient Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient ID</th>
+                                            <th>Name</th>
+                                            <th>Date of Birth</th>
+                                            <th>Phone</th>
+                                            <th>Email</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for patient in results %}
+                                        <tr>
+                                            <td><strong>{{ patient.id }}</strong></td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if patient.profile_picture %}
+                                                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + patient.profile_picture) }}" 
+                                                         alt="{{ patient.first_name }} {{ patient.last_name }}" 
+                                                         class="rounded-circle me-2" width="32" height="32">
+                                                    {% else %}
+                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
+                                                         style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                        {{ patient.first_name[0] }}{{ patient.last_name[0] }}
+                                                    </div>
+                                                    {% endif %}
+                                                    {{ patient.first_name }} {{ patient.last_name }}
+                                                </div>
+                                            </td>
+                                            <td>{{ patient.date_of_birth.strftime('%m/%d/%Y') if patient.date_of_birth else 'Not provided' }}</td>
+                                            <td>{{ patient.phone or 'Not provided' }}</td>
+                                            <td>{{ patient.email or 'Not provided' }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{{ url_for('main.patient_detail', id=patient.id) }}" 
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('main.book_appointment') }}?patient_id={{ patient.id }}" 
+                                                       class="btn btn-sm btn-outline-success">
+                                                        <i class="fas fa-calendar-plus"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif search_type == 'appointments' %}
+                    <!-- Appointments Results -->
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Appointment Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>Patient</th>
+                                            <th>Doctor</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for appointment in results %}
+                                        <tr>
+                                            <td>
+                                                {{ appointment.appointment_date.strftime('%m/%d/%Y') }}<br>
+                                                <small class="text-muted">{{ appointment.appointment_time.strftime('%I:%M %p') if appointment.appointment_time else 'Time TBD' }}</small>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('main.patient_detail', id=appointment.patient.id) }}" 
+                                                   class="text-decoration-none">
+                                                    {{ appointment.patient.first_name }} {{ appointment.patient.last_name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('main.doctor_detail', id=appointment.doctor.id) }}" 
+                                                   class="text-decoration-none">
+                                                    Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}
+                                                </a>
+                                            </td>
+                                            <td>{{ appointment.appointment_type or 'General' }}</td>
+                                            <td>
+                                                {% if appointment.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                                {% elif appointment.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% elif appointment.status == 'in_progress' %}
+                                                <span class="badge bg-primary">In Progress</span>
+                                                {% else %}
+                                                <span class="badge bg-warning">Scheduled</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{{ url_for('main.appointment_detail', id=appointment.id) }}" 
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('main.edit_appointment', id=appointment.id) }}" 
+                                                       class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif search_type == 'medical_records' %}
+                    <!-- Medical Records Results -->
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-file-medical me-2"></i>Medical Record Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Patient</th>
+                                            <th>Doctor</th>
+                                            <th>Visit Type</th>
+                                            <th>Chief Complaint</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in results %}
+                                        <tr>
+                                            <td>{{ record.visit_date.strftime('%m/%d/%Y') }}</td>
+                                            <td>
+                                                <a href="{{ url_for('main.patient_detail', id=record.patient.id) }}" 
+                                                   class="text-decoration-none">
+                                                    {{ record.patient.first_name }} {{ record.patient.last_name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('main.doctor_detail', id=record.doctor.id) }}" 
+                                                   class="text-decoration-none">
+                                                    Dr. {{ record.doctor.first_name }} {{ record.doctor.last_name }}
+                                                </a>
+                                            </td>
+                                            <td><span class="badge bg-info">{{ record.visit_type or 'General' }}</span></td>
+                                            <td>{{ record.chief_complaint[:50] }}{% if record.chief_complaint and record.chief_complaint|length > 50 %}...{% endif %}</td>
+                                            <td>
+                                                <a href="{{ url_for('main.medical_record_detail', id=record.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif search_type == 'doctors' %}
+                    <!-- Doctors Results -->
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-user-md me-2"></i>Doctor Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for doctor in results %}
+                                <div class="col-lg-4 col-md-6 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                {% if doctor.profile_picture %}
+                                                <img src="{{ url_for('static', filename='uploads/profile_pics/' + doctor.profile_picture) }}" 
+                                                     alt="{{ doctor.first_name }} {{ doctor.last_name }}" 
+                                                     class="rounded-circle me-3" width="50" height="50">
+                                                {% else %}
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                                     style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-user-md"></i>
+                                                </div>
+                                                {% endif %}
+                                                <div>
+                                                    <h6 class="mb-1">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h6>
+                                                    <small class="text-muted">{{ doctor.specialty }}</small>
+                                                </div>
+                                            </div>
+                                            
+                                            {% if doctor.bio %}
+                                            <p class="card-text">{{ doctor.bio[:100] }}{% if doctor.bio|length > 100 %}...{% endif %}</p>
+                                            {% endif %}
+                                            
+                                            <div class="d-flex justify-content-between">
+                                                <a href="{{ url_for('main.doctor_detail', id=doctor.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye me-1"></i>View Details
+                                                </a>
+                                                {% if doctor.is_active %}
+                                                <span class="badge bg-success">Available</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Unavailable</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+            {% elif query %}
+                <!-- No Results -->
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Results Found</h4>
+                        <p class="text-muted">
+                            No {{ search_type }} were found matching your search query "<strong>{{ query }}</strong>".
+                        </p>
+                        <div class="mt-4">
+                            <p class="text-muted mb-3">Try:</p>
+                            <ul class="list-unstyled text-muted">
+                                <li>• Checking your spelling</li>
+                                <li>• Using different keywords</li>
+                                <li>• Searching in a different category</li>
+                                <li>• Using partial names or terms</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+                <!-- No Search Query -->
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                        <h4 class="text-primary">Search Our Database</h4>
+                        <p class="text-muted">
+                            Enter a search query above to find patients, appointments, medical records, or doctors.
+                        </p>
+                        <div class="mt-4">
+                            <h6 class="text-muted mb-3">Quick Search Tips:</h6>
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-users text-primary mb-2"></i>
+                                            <small><strong>Patients</strong><br>Search by name, email, or phone</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-calendar-alt text-success mb-2"></i>
+                                            <small><strong>Appointments</strong><br>Search by patient or doctor name</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-file-medical text-info mb-2"></i>
+                                            <small><strong>Records</strong><br>Search by patient or diagnosis</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-user-md text-warning mb-2"></i>
+                                            <small><strong>Doctors</strong><br>Search by name or specialty</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.search-result-item {
+    transition: transform 0.3s ease;
+}
+
+.search-result-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin: 0.1rem 0;
+        border-radius: 0.375rem !important;
+    }
+}
+</style>
+{% endblock %}

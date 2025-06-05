@@ -1,0 +1,708 @@
+{% extends "base.html" %}
+
+{% block title %}Patients - HealthCare Clinic{% endblock %}
+
+{% block extra_css %}
+<style>
+    .patient-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .patient-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .patient-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .patient-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    .search-controls {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .quick-stats {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .btn-group-actions {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-users"></i> Patient Management</h2>
+                    <p class="text-muted">Manage patient records and information</p>
+                </div>
+                <div>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+                        <i class="fas fa-user-plus"></i> Add New Patient
+                    </button>
+                    <button class="btn btn-primary" onclick="exportPatients()">
+                        <i class="fas fa-download"></i> Export List
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Statistics -->
+    <div class="quick-stats">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h3 class="mb-1">{{ total_patients or 0 }}</h3>
+                <p class="mb-0">Total Patients</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-1">{{ new_patients_today or 0 }}</h3>
+                <p class="mb-0">New Today</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-1">{{ active_patients or 0 }}</h3>
+                <p class="mb-0">Active Patients</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-1">{{ upcoming_appointments or 0 }}</h3>
+                <p class="mb-0">Upcoming Appointments</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="search-controls">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">Search Patients</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Name, ID, Phone, Email..." onkeyup="searchPatients()">
+                    <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="statusFilter" onchange="filterPatients()">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="archived">Archived</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Age Group</label>
+                <select class="form-select" id="ageFilter" onchange="filterPatients()">
+                    <option value="">All Ages</option>
+                    <option value="child">Child (0-17)</option>
+                    <option value="adult">Adult (18-64)</option>
+                    <option value="senior">Senior (65+)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Gender</label>
+                <select class="form-select" id="genderFilter" onchange="filterPatients()">
+                    <option value="">All Genders</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">View</label>
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary active" onclick="toggleView('table')">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="toggleView('card')">
+                        <i class="fas fa-th"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table View -->
+    <div id="tableView" class="table-responsive">
+        <table class="table table-hover bg-white">
+            <thead class="table-dark">
+                <tr>
+                    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th onclick="sortTable('name')" style="cursor: pointer;">
+                        Name <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable('patient_id')" style="cursor: pointer;">
+                        Patient ID <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable('age')" style="cursor: pointer;">
+                        Age <i class="fas fa-sort"></i>
+                    </th>
+                    <th>Contact</th>
+                    <th onclick="sortTable('last_visit')" style="cursor: pointer;">
+                        Last Visit <i class="fas fa-sort"></i>
+                    </th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="patientsTableBody">
+                {% if patients %}
+                    {% for patient in patients %}
+                    <tr data-patient-id="{{ patient.id }}" data-status="{{ patient.status }}" data-age="{{ patient.age }}" data-gender="{{ patient.gender }}">
+                        <td><input type="checkbox" class="patient-checkbox" value="{{ patient.id }}"></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if patient.profile_picture %}
+                                <img src="{{ url_for('static', filename='uploads/profiles/' + patient.profile_picture) }}" 
+                                     class="patient-avatar me-3" alt="Patient">
+                                {% else %}
+                                <div class="patient-avatar bg-primary text-white d-flex align-items-center justify-content-center me-3">
+                                    {{ patient.first_name[0] }}{{ patient.last_name[0] if patient.last_name else '' }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ patient.first_name }} {{ patient.last_name or '' }}</strong>
+                                    {% if patient.preferred_name %}
+                                    <br><small class="text-muted">"{{ patient.preferred_name }}"</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-secondary">{{ patient.patient_id or 'Pending' }}</span></td>
+                        <td>{{ patient.age or 'N/A' }}</td>
+                        <td>
+                            <small>
+                                <i class="fas fa-phone"></i> {{ patient.phone or 'Not provided' }}<br>
+                                <i class="fas fa-envelope"></i> {{ patient.email or 'Not provided' }}
+                            </small>
+                        </td>
+                        <td>
+                            {% if patient.last_visit_date %}
+                            {{ patient.last_visit_date.strftime('%m/%d/%Y') }}
+                            {% else %}
+                            <span class="text-muted">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if patient.status == 'active' else 'warning' if patient.status == 'inactive' else 'secondary' }}">
+                                {{ patient.status.title() if patient.status else 'Active' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm btn-group-actions" role="group">
+                                <button class="btn btn-outline-primary" onclick="viewPatient('{{ patient.id }}')" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-info" onclick="editPatient('{{ patient.id }}')" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-success" onclick="newAppointment('{{ patient.id }}')" title="New Appointment">
+                                    <i class="fas fa-calendar-plus"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="addRecord('{{ patient.id }}')" title="Add Record">
+                                    <i class="fas fa-file-medical"></i>
+                                </button>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="More">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" onclick="sendMessage('{{ patient.id }}')">
+                                            <i class="fas fa-envelope"></i> Send Message
+                                        </a></li>
+                                        <li><a class="dropdown-item" onclick="printCard('{{ patient.id }}')">
+                                            <i class="fas fa-print"></i> Print Card
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" onclick="archivePatient('{{ patient.id }}')">
+                                            <i class="fas fa-archive"></i> Archive
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No patients found</h5>
+                        <p class="text-muted">Start by adding your first patient</p>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Card View -->
+    <div id="cardView" class="row" style="display: none;">
+        {% if patients %}
+            {% for patient in patients %}
+            <div class="col-md-6 col-lg-4 mb-4 patient-card-container" data-patient-id="{{ patient.id }}" data-status="{{ patient.status }}" data-age="{{ patient.age }}" data-gender="{{ patient.gender }}">
+                <div class="patient-card card h-100 position-relative">
+                    <div class="patient-status">
+                        <span class="badge bg-{{ 'success' if patient.status == 'active' else 'warning' if patient.status == 'inactive' else 'secondary' }}">
+                            {{ patient.status.title() if patient.status else 'Active' }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            {% if patient.profile_picture %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + patient.profile_picture) }}" 
+                                 class="patient-avatar" alt="Patient">
+                            {% else %}
+                            <div class="patient-avatar bg-primary text-white d-inline-flex align-items-center justify-content-center">
+                                {{ patient.first_name[0] }}{{ patient.last_name[0] if patient.last_name else '' }}
+                            </div>
+                            {% endif %}
+                            <h6 class="mt-2 mb-1">{{ patient.first_name }} {{ patient.last_name or '' }}</h6>
+                            {% if patient.preferred_name %}
+                            <small class="text-muted">"{{ patient.preferred_name }}"</small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <strong>ID:</strong> {{ patient.patient_id or 'Pending' }}<br>
+                                <strong>Age:</strong> {{ patient.age or 'N/A' }}<br>
+                                <strong>Phone:</strong> {{ patient.phone or 'Not provided' }}<br>
+                                <strong>Last Visit:</strong> 
+                                {% if patient.last_visit_date %}
+                                {{ patient.last_visit_date.strftime('%m/%d/%Y') }}
+                                {% else %}
+                                Never
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-primary" onclick="viewPatient('{{ patient.id }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-info" onclick="editPatient('{{ patient.id }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-success" onclick="newAppointment('{{ patient.id }}')">
+                                    <i class="fas fa-calendar-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% for page in range(1, total_pages + 1) %}
+            <li class="page-item {{ 'active' if page == current_page else '' }}">
+                <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- Bulk Actions Bar -->
+    <div id="bulkActionsBar" class="fixed-bottom bg-dark text-white p-3" style="display: none;">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span id="selectedCount">0</span> patients selected
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-warning me-2" onclick="bulkAction('message')">
+                        <i class="fas fa-envelope"></i> Send Message
+                    </button>
+                    <button class="btn btn-info me-2" onclick="bulkAction('export')">
+                        <i class="fas fa-download"></i> Export Selected
+                    </button>
+                    <button class="btn btn-danger" onclick="bulkAction('archive')">
+                        <i class="fas fa-archive"></i> Archive Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Patient Modal -->
+<div class="modal fade" id="addPatientModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Add New Patient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPatientForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" class="form-control" name="first_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" name="last_name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date of Birth *</label>
+                                <input type="date" class="form-control" name="date_of_birth" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Gender</label>
+                                <select class="form-select" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" name="phone">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" name="address" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Emergency Contact</label>
+                                <input type="text" class="form-control" name="emergency_contact">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Emergency Phone</label>
+                                <input type="tel" class="form-control" name="emergency_phone">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="savePatient()">Add Patient</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentView = 'table';
+let sortDirection = 'asc';
+let sortColumn = '';
+
+function toggleView(view) {
+    currentView = view;
+    
+    if (view === 'table') {
+        document.getElementById('tableView').style.display = 'block';
+        document.getElementById('cardView').style.display = 'none';
+        document.querySelector('[onclick="toggleView(\'table\')"]').classList.add('active');
+        document.querySelector('[onclick="toggleView(\'card\')"]').classList.remove('active');
+    } else {
+        document.getElementById('tableView').style.display = 'none';
+        document.getElementById('cardView').style.display = 'flex';
+        document.querySelector('[onclick="toggleView(\'card\')"]').classList.add('active');
+        document.querySelector('[onclick="toggleView(\'table\')"]').classList.remove('active');
+    }
+}
+
+function searchPatients() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#patientsTableBody tr');
+    const cards = document.querySelectorAll('.patient-card-container');
+    
+    // Search in table view
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+    
+    // Search in card view
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    searchPatients();
+}
+
+function filterPatients() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const ageFilter = document.getElementById('ageFilter').value;
+    const genderFilter = document.getElementById('genderFilter').value;
+    
+    const elements = document.querySelectorAll('[data-patient-id]');
+    
+    elements.forEach(element => {
+        let show = true;
+        
+        if (statusFilter && element.dataset.status !== statusFilter) {
+            show = false;
+        }
+        
+        if (ageFilter) {
+            const age = parseInt(element.dataset.age) || 0;
+            if (ageFilter === 'child' && age >= 18) show = false;
+            if (ageFilter === 'adult' && (age < 18 || age >= 65)) show = false;
+            if (ageFilter === 'senior' && age < 65) show = false;
+        }
+        
+        if (genderFilter && element.dataset.gender !== genderFilter) {
+            show = false;
+        }
+        
+        element.style.display = show ? '' : 'none';
+    });
+}
+
+function sortTable(column) {
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'asc';
+    }
+    
+    // Implement sorting logic here
+    window.location.href = `?sort=${column}&direction=${sortDirection}`;
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.patient-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkedBoxes = document.querySelectorAll('.patient-checkbox:checked');
+    const bulkBar = document.getElementById('bulkActionsBar');
+    const countSpan = document.getElementById('selectedCount');
+    
+    if (checkedBoxes.length > 0) {
+        bulkBar.style.display = 'block';
+        countSpan.textContent = checkedBoxes.length;
+    } else {
+        bulkBar.style.display = 'none';
+    }
+}
+
+// Add event listeners to checkboxes
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.patient-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+});
+
+function viewPatient(patientId) {
+    window.location.href = `/patients/${patientId}`;
+}
+
+function editPatient(patientId) {
+    window.location.href = `/patients/${patientId}/edit`;
+}
+
+function newAppointment(patientId) {
+    window.location.href = `/appointments/book?patient_id=${patientId}`;
+}
+
+function addRecord(patientId) {
+    window.location.href = `/patients/${patientId}/add-record`;
+}
+
+function sendMessage(patientId) {
+    // Implement messaging functionality
+    console.log('Send message to patient:', patientId);
+}
+
+function printCard(patientId) {
+    window.open(`/patients/${patientId}/print-card`, '_blank');
+}
+
+function archivePatient(patientId) {
+    if (confirm('Are you sure you want to archive this patient?')) {
+        fetch(`/patients/api/archive/${patientId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Patient archived successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Error archiving patient', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error archiving patient:', error);
+            showNotification('Error archiving patient', 'error');
+        });
+    }
+}
+
+function savePatient() {
+    const form = document.getElementById('addPatientForm');
+    const formData = new FormData(form);
+    
+    fetch('/patients/api/create', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Patient added successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('addPatientModal')).hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Error adding patient', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding patient:', error);
+        showNotification('Error adding patient', 'error');
+    });
+}
+
+function exportPatients() {
+    const link = document.createElement('a');
+    link.href = '/patients/api/export';
+    link.download = 'patients.csv';
+    link.click();
+}
+
+function bulkAction(action) {
+    const selectedIds = Array.from(document.querySelectorAll('.patient-checkbox:checked'))
+        .map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Please select at least one patient.');
+        return;
+    }
+    
+    switch (action) {
+        case 'message':
+            // Implement bulk messaging
+            console.log('Send message to patients:', selectedIds);
+            break;
+        case 'export':
+            const link = document.createElement('a');
+            link.href = `/patients/api/export?ids=${selectedIds.join(',')}`;
+            link.download = 'selected-patients.csv';
+            link.click();
+            break;
+        case 'archive':
+            if (confirm(`Archive ${selectedIds.length} selected patients?`)) {
+                fetch('/patients/api/bulk-archive', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ patient_ids: selectedIds })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Patients archived successfully', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification(data.message || 'Error archiving patients', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error archiving patients:', error);
+                    showNotification('Error archiving patients', 'error');
+                });
+            }
+            break;
+    }
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

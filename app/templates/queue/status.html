@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Queue Status - Clinic Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center py-4">
+                    <h2 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Current Queue Status
+                    </h2>
+                    <p class="mb-0">Real-time queue updates • Last updated: <span id="last-updated"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-2x text-primary mb-2"></i>
+                    <h4 class="text-primary">{{ tickets|length }}</h4>
+                    <p class="text-muted mb-0">People in Queue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                    <h4 class="text-warning">{{ tickets|selectattr("priority", "equalto", 3)|list|length }}</h4>
+                    <p class="text-muted mb-0">Urgent Cases</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                    <h4 class="text-success">~15</h4>
+                    <p class="text-muted mb-0">Avg Wait (min)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-user-md fa-2x text-info mb-2"></i>
+                    <h4 class="text-info">3</h4>
+                    <p class="text-muted mb-0">Doctors Available</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Display -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Current Queue
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshQueue()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if tickets %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Position</th>
+                                        <th>Ticket #</th>
+                                        <th>Service</th>
+                                        <th>Priority</th>
+                                        <th>Wait Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ticket in tickets %}
+                                    <tr class="queue-item" data-priority="{{ ticket.priority }}">
+                                        <td>
+                                            <span class="badge bg-primary fs-6">{{ loop.index }}</span>
+                                        </td>
+                                        <td>
+                                            <strong>#{{ ticket.ticket_number }}</strong>
+                                        </td>
+                                        <td>{{ ticket.service_type }}</td>
+                                        <td>
+                                            {% if ticket.priority == 3 %}
+                                                <span class="priority-badge priority-urgent">Urgent</span>
+                                            {% elif ticket.priority == 2 %}
+                                                <span class="priority-badge priority-high">High</span>
+                                            {% else %}
+                                                <span class="priority-badge priority-normal">Normal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="wait-time" data-created="{{ ticket.created_at.isoformat() }}">
+                                                Calculating...
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>Waiting
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h4 class="text-success">No Queue Currently</h4>
+                            <p class="text-muted">All patients have been served. New patients can get a ticket.</p>
+                            <a href="{{ url_for('queue.kiosk') }}" class="btn btn-primary">
+                                <i class="fas fa-ticket-alt me-2"></i>Get Queue Ticket
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <div class="card bg-light">
+                <div class="card-body py-4">
+                    <h5 class="mb-3">Need to Join the Queue?</h5>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('queue.kiosk') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-ticket-alt me-2"></i>Get Queue Ticket
+                        </a>
+                        <a href="{{ url_for('main.services') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-info-circle me-2"></i>View Services
+                        </a>
+                        {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('patient_portal.register') }}" class="btn btn-success btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Register
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update last updated time
+function updateLastUpdated() {
+    document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+}
+
+// Calculate wait times
+function updateWaitTimes() {
+    const waitTimeElements = document.querySelectorAll('.wait-time');
+    waitTimeElements.forEach(element => {
+        const createdAt = new Date(element.dataset.created);
+        const now = new Date();
+        const diffMinutes = Math.floor((now - createdAt) / (1000 * 60));
+        element.textContent = diffMinutes + ' min';
+        
+        // Add visual indicators for long waits
+        if (diffMinutes > 30) {
+            element.classList.add('text-danger');
+            element.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${diffMinutes} min`;
+        } else if (diffMinutes > 15) {
+            element.classList.add('text-warning');
+        }
+    });
+}
+
+// Refresh queue data
+function refreshQueue() {
+    location.reload();
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    refreshQueue();
+}, 30000);
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateLastUpdated();
+    updateWaitTimes();
+    
+    // Update wait times every minute
+    setInterval(updateWaitTimes, 60000);
+});
+
+// Priority-based row styling
+document.addEventListener('DOMContentLoaded', function() {
+    const queueItems = document.querySelectorAll('.queue-item');
+    queueItems.forEach(item => {
+        const priority = parseInt(item.dataset.priority);
+        if (priority === 3) {
+            item.classList.add('table-danger');
+        } else if (priority === 2) {
+            item.classList.add('table-warning');
+        }
+    });
+});
+</script>
+
+<style>
+.queue-item {
+    transition: all 0.3s ease;
+}
+
+.queue-item:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.wait-time {
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        margin: 0.25rem 0;
+    }
+}
+</style>
+{% endblock %}

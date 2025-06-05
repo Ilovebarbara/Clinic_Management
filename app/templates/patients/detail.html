@@ -1,0 +1,619 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient.first_name }} {{ patient.last_name }} - Patient Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .patient-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .patient-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+    }
+    .info-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    .timeline-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 1rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        background: #007bff;
+        border-radius: 50%;
+    }
+    .timeline-item.emergency::before {
+        background: #dc3545;
+    }
+    .timeline-item.follow-up::before {
+        background: #28a745;
+    }
+    .vital-chart {
+        height: 300px;
+    }
+    .prescription-active {
+        border-left: 4px solid #28a745;
+    }
+    .prescription-completed {
+        border-left: 4px solid #6c757d;
+    }
+    .alert-card {
+        border-left: 4px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Patient Header -->
+    <div class="patient-header">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                {% if patient.profile_picture %}
+                <img src="{{ url_for('static', filename='uploads/profiles/' + patient.profile_picture) }}" 
+                     class="patient-avatar" alt="Patient Photo">
+                {% else %}
+                <div class="patient-avatar bg-white text-primary d-inline-flex align-items-center justify-content-center" 
+                     style="font-size: 3rem;">
+                    {{ patient.first_name[0] }}{{ patient.last_name[0] if patient.last_name else '' }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-7">
+                <h2 class="mb-1">{{ patient.first_name }} {{ patient.last_name or '' }}</h2>
+                {% if patient.preferred_name %}
+                <p class="mb-1">Preferred: "{{ patient.preferred_name }}"</p>
+                {% endif %}
+                <p class="mb-2">
+                    <strong>Patient ID:</strong> {{ patient.patient_id or 'Pending Assignment' }} |
+                    <strong>Age:</strong> {{ patient.age or 'Unknown' }} |
+                    <strong>Gender:</strong> {{ patient.gender.title() if patient.gender else 'Not specified' }}
+                </p>
+                <p class="mb-0">
+                    <i class="fas fa-calendar"></i> DOB: {{ patient.date_of_birth.strftime('%B %d, %Y') if patient.date_of_birth else 'Not provided' }} |
+                    <i class="fas fa-user-check"></i> Status: 
+                    <span class="badge bg-{{ 'success' if patient.status == 'active' else 'warning' }}">
+                        {{ patient.status.title() if patient.status else 'Active' }}
+                    </span>
+                </p>
+            </div>
+            <div class="col-md-3 text-end">
+                <div class="btn-group-vertical" role="group">
+                    <button class="btn btn-light mb-2" onclick="editPatient()">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
+                    <button class="btn btn-success mb-2" onclick="newAppointment()">
+                        <i class="fas fa-calendar-plus"></i> New Appointment
+                    </button>
+                    <button class="btn btn-info mb-2" onclick="addRecord()">
+                        <i class="fas fa-file-medical"></i> Add Record
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i> More
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" onclick="printProfile()">
+                                <i class="fas fa-print"></i> Print Profile
+                            </a></li>
+                            <li><a class="dropdown-item" onclick="sendMessage()">
+                                <i class="fas fa-envelope"></i> Send Message
+                            </a></li>
+                            <li><a class="dropdown-item" onclick="generateReport()">
+                                <i class="fas fa-file-pdf"></i> Generate Report
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-warning" onclick="changeStatus()">
+                                <i class="fas fa-user-times"></i> Change Status
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Patient Information -->
+        <div class="col-lg-4">
+            <!-- Contact Information -->
+            <div class="info-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-address-card"></i> Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="fas fa-phone"></i> Phone:</strong><br>
+                        {{ patient.phone or 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-envelope"></i> Email:</strong><br>
+                        {{ patient.email or 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-map-marker-alt"></i> Address:</strong><br>
+                        {{ patient.address or 'Not provided' }}
+                    </div>
+                    {% if patient.emergency_contact %}
+                    <div class="mb-3">
+                        <strong><i class="fas fa-user-shield"></i> Emergency Contact:</strong><br>
+                        {{ patient.emergency_contact }}<br>
+                        <small class="text-muted">{{ patient.emergency_phone or 'No phone provided' }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Medical Alerts -->
+            {% if patient.allergies or patient.chronic_conditions or patient.medical_alerts %}
+            <div class="info-card card alert-card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Medical Alerts</h5>
+                </div>
+                <div class="card-body">
+                    {% if patient.allergies %}
+                    <div class="mb-3">
+                        <strong>Allergies:</strong><br>
+                        {% for allergy in patient.allergies %}
+                        <span class="badge bg-danger me-1">{{ allergy }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if patient.chronic_conditions %}
+                    <div class="mb-3">
+                        <strong>Chronic Conditions:</strong><br>
+                        {% for condition in patient.chronic_conditions %}
+                        <span class="badge bg-warning me-1">{{ condition }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if patient.medical_alerts %}
+                    <div class="mb-3">
+                        <strong>Special Alerts:</strong><br>
+                        {% for alert in patient.medical_alerts %}
+                        <div class="alert alert-danger py-1 mb-1">{{ alert }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Insurance Information -->
+            {% if patient.insurance_provider %}
+            <div class="info-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Insurance Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Provider:</strong> {{ patient.insurance_provider }}
+                    </div>
+                    {% if patient.insurance_policy_number %}
+                    <div class="mb-2">
+                        <strong>Policy Number:</strong> {{ patient.insurance_policy_number }}
+                    </div>
+                    {% endif %}
+                    {% if patient.insurance_group_number %}
+                    <div class="mb-2">
+                        <strong>Group Number:</strong> {{ patient.insurance_group_number }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Stats -->
+            <div class="info-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ total_visits or 0 }}</h4>
+                            <small class="text-muted">Total Visits</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ total_prescriptions or 0 }}</h4>
+                            <small class="text-muted">Prescriptions</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <strong>First Visit:</strong><br>
+                            <small>{{ first_visit_date.strftime('%m/%d/%Y') if first_visit_date else 'Never' }}</small>
+                        </div>
+                        <div class="col-6">
+                            <strong>Last Visit:</strong><br>
+                            <small>{{ last_visit_date.strftime('%m/%d/%Y') if last_visit_date else 'Never' }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Medical History and Activity -->
+        <div class="col-lg-8">
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-3" id="patientTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                        <i class="fas fa-home"></i> Overview
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="records-tab" data-bs-toggle="tab" data-bs-target="#records" type="button" role="tab">
+                        <i class="fas fa-file-medical"></i> Medical Records
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments" type="button" role="tab">
+                        <i class="fas fa-calendar"></i> Appointments
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="prescriptions-tab" data-bs-toggle="tab" data-bs-target="#prescriptions" type="button" role="tab">
+                        <i class="fas fa-pills"></i> Prescriptions
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vitals-tab" data-bs-toggle="tab" data-bs-target="#vitals" type="button" role="tab">
+                        <i class="fas fa-heartbeat"></i> Vital Signs
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="patientTabsContent">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                    <!-- Recent Activity Timeline -->
+                    <div class="info-card card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_activity %}
+                                {% for activity in recent_activity %}
+                                <div class="timeline-item {{ activity.type }}">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="mb-1">{{ activity.title }}</h6>
+                                            <p class="mb-1">{{ activity.description }}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar"></i> {{ activity.date.strftime('%B %d, %Y') }}
+                                                {% if activity.doctor %}
+                                                | <i class="fas fa-user-md"></i> Dr. {{ activity.doctor }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        {% if activity.type == 'consultation' %}
+                                        <span class="badge bg-primary">{{ activity.type.title() }}</span>
+                                        {% elif activity.type == 'emergency' %}
+                                        <span class="badge bg-danger">{{ activity.type.title() }}</span>
+                                        {% else %}
+                                        <span class="badge bg-info">{{ activity.type.title() }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No recent activity</h6>
+                                <p class="text-muted">Patient activity will appear here</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medical Records Tab -->
+                <div class="tab-pane fade" id="records" role="tabpanel">
+                    <div class="info-card card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-file-medical-alt"></i> Medical Records</h5>
+                            <button class="btn btn-primary btn-sm" onclick="addRecord()">
+                                <i class="fas fa-plus"></i> Add Record
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            {% if medical_records %}
+                                {% for record in medical_records %}
+                                <div class="border-bottom pb-3 mb-3">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <h6>{{ record.consultation_type.title() }} - {{ record.consultation_date.strftime('%B %d, %Y') }}</h6>
+                                            <p class="mb-1"><strong>Doctor:</strong> Dr. {{ record.doctor.name if record.doctor else 'Unknown' }}</p>
+                                            {% if record.diagnosis %}
+                                            <p class="mb-1"><strong>Diagnosis:</strong> {{ record.diagnosis[:100] }}{% if record.diagnosis|length > 100 %}...{% endif %}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewRecord('{{ record.id }}')">
+                                                <i class="fas fa-eye"></i> View
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No medical records</h6>
+                                <button class="btn btn-primary" onclick="addRecord()">Add First Record</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Tab -->
+                <div class="tab-pane fade" id="appointments" role="tabpanel">
+                    <div class="info-card card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-calendar-check"></i> Appointments</h5>
+                            <button class="btn btn-success btn-sm" onclick="newAppointment()">
+                                <i class="fas fa-calendar-plus"></i> New Appointment
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            {% if appointments %}
+                                {% for appointment in appointments %}
+                                <div class="border-bottom pb-3 mb-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h6>{{ appointment.appointment_type or 'General Consultation' }}</h6>
+                                            <p class="mb-1">
+                                                <i class="fas fa-calendar"></i> {{ appointment.appointment_date.strftime('%B %d, %Y') }}
+                                                <i class="fas fa-clock ms-3"></i> {{ appointment.appointment_time.strftime('%I:%M %p') }}
+                                            </p>
+                                            <p class="mb-0">
+                                                <i class="fas fa-user-md"></i> Dr. {{ appointment.doctor.name if appointment.doctor else 'To be assigned' }}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <span class="badge bg-{{ 'success' if appointment.status == 'confirmed' else 'warning' if appointment.status == 'pending' else 'danger' }} mb-2">
+                                                {{ appointment.status.title() }}
+                                            </span><br>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="viewAppointment('{{ appointment.id }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="editAppointment('{{ appointment.id }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No appointments scheduled</h6>
+                                <button class="btn btn-success" onclick="newAppointment()">Schedule First Appointment</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prescriptions Tab -->
+                <div class="tab-pane fade" id="prescriptions" role="tabpanel">
+                    <div class="info-card card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-pills"></i> Prescriptions</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if prescriptions %}
+                                {% for prescription in prescriptions %}
+                                <div class="p-3 mb-3 rounded {{ 'prescription-active' if prescription.is_active else 'prescription-completed' }}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h6 class="mb-1">{{ prescription.medication_name }}</h6>
+                                            <p class="mb-1">{{ prescription.dosage }} - {{ prescription.frequency }}</p>
+                                            <small class="text-muted">
+                                                Prescribed: {{ prescription.prescribed_date.strftime('%m/%d/%Y') }}
+                                                {% if prescription.duration %}
+                                                | Duration: {{ prescription.duration }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <span class="badge bg-{{ 'success' if prescription.is_active else 'secondary' }}">
+                                                {{ 'Active' if prescription.is_active else 'Completed' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% if prescription.instructions %}
+                                    <div class="mt-2">
+                                        <small><strong>Instructions:</strong> {{ prescription.instructions }}</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-pills fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No prescriptions</h6>
+                                <p class="text-muted">Patient prescriptions will appear here</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vital Signs Tab -->
+                <div class="tab-pane fade" id="vitals" role="tabpanel">
+                    <div class="info-card card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-heartbeat"></i> Vital Signs History</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if vital_signs %}
+                            <div class="vital-chart">
+                                <canvas id="vitalsChart"></canvas>
+                            </div>
+                            <div class="table-responsive mt-3">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Blood Pressure</th>
+                                            <th>Heart Rate</th>
+                                            <th>Temperature</th>
+                                            <th>Weight</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for vital in vital_signs %}
+                                        <tr>
+                                            <td>{{ vital.recorded_date.strftime('%m/%d/%Y') }}</td>
+                                            <td>{{ vital.blood_pressure or '-' }}</td>
+                                            <td>{{ vital.heart_rate or '-' }} bpm</td>
+                                            <td>{{ vital.temperature or '-' }}°F</td>
+                                            <td>{{ vital.weight or '-' }} lbs</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-heartbeat fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No vital signs recorded</h6>
+                                <p class="text-muted">Vital signs history will appear here</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editPatient() {
+    window.location.href = `/patients/{{ patient.id }}/edit`;
+}
+
+function newAppointment() {
+    window.location.href = `/appointments/book?patient_id={{ patient.id }}`;
+}
+
+function addRecord() {
+    window.location.href = `/patients/{{ patient.id }}/add-record`;
+}
+
+function viewRecord(recordId) {
+    window.location.href = `/patients/{{ patient.id }}/records/${recordId}`;
+}
+
+function viewAppointment(appointmentId) {
+    window.location.href = `/appointments/${appointmentId}`;
+}
+
+function editAppointment(appointmentId) {
+    window.location.href = `/appointments/${appointmentId}/edit`;
+}
+
+function printProfile() {
+    window.open(`/patients/{{ patient.id }}/print`, '_blank');
+}
+
+function sendMessage() {
+    // Implement messaging functionality
+    console.log('Send message to patient {{ patient.id }}');
+}
+
+function generateReport() {
+    window.open(`/patients/{{ patient.id }}/report`, '_blank');
+}
+
+function changeStatus() {
+    // Implement status change functionality
+    console.log('Change status for patient {{ patient.id }}');
+}
+
+// Initialize vital signs chart if data exists
+{% if vital_signs %}
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('vitalsChart').getContext('2d');
+    const vitalsData = {{ vital_signs_chart_data|tojson }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: vitalsData.dates,
+            datasets: [{
+                label: 'Blood Pressure (Systolic)',
+                data: vitalsData.blood_pressure_sys,
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }, {
+                label: 'Heart Rate',
+                data: vitalsData.heart_rate,
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1
+            }, {
+                label: 'Weight',
+                data: vitalsData.weight,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+});
+{% endif %}
+</script>
+{% endblock %}

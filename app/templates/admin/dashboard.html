@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - HealthCare Clinic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Patients
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_patients }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Active Queue
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.active_queue }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-list-ol fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Today's Appointments
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.todays_appointments }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Staff Members
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.staff_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Patient Registrations (Last 7 Days)</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="registrationsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Queue Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="queueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity and Queue Management -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Patients</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_patients %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Registered</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in recent_patients %}
+                                <tr>
+                                    <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ 'primary' if patient.patient_type == 'faculty' else 'secondary' }}">
+                                            {{ patient.patient_type.title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ patient.created_at.strftime('%m/%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('main.patient_detail', id=patient.id) }}" class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent patients.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Active Queue</h6>
+            </div>
+            <div class="card-body">
+                {% if active_queue %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Ticket #</th>
+                                    <th>Patient</th>
+                                    <th>Priority</th>
+                                    <th>Wait Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in active_queue %}
+                                <tr>
+                                    <td><strong>{{ ticket.ticket_number }}</strong></td>
+                                    <td>{{ ticket.patient.first_name }} {{ ticket.patient.last_name }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ 'danger' if ticket.priority == 5 else 'warning' if ticket.priority == 4 else 'info' if ticket.priority == 3 else 'secondary' }}">
+                                            {{ ticket.get_priority_name() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ ticket.get_wait_time() }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('queue.manage') }}" class="btn btn-primary">Manage Queue</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No active queue tickets.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('patient_portal.register') }}" class="btn btn-primary btn-block">
+                            <i class="fas fa-user-plus"></i> Register Patient
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('queue.kiosk') }}" class="btn btn-success btn-block">
+                            <i class="fas fa-ticket-alt"></i> Queue Kiosk
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('queue.manage') }}" class="btn btn-info btn-block">
+                            <i class="fas fa-list-ol"></i> Manage Queue
+                        </a>
+                    </div>
+                    {% if current_user.role == 'super_admin' %}
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.staff_management') }}" class="btn btn-warning btn-block">
+                            <i class="fas fa-user-cog"></i> Staff Management
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.text-xs {
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Patient registrations chart
+const ctx1 = document.getElementById('registrationsChart').getContext('2d');
+const registrationsChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+        labels: {{ chart_data.registration_labels | safe }},
+        datasets: [{
+            label: 'New Registrations',
+            data: {{ chart_data.registration_data | safe }},
+            borderColor: '#4e73df',
+            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+            borderWidth: 2,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Queue status chart
+const ctx2 = document.getElementById('queueChart').getContext('2d');
+const queueChart = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+        labels: ['Waiting', 'In Progress', 'Completed'],
+        datasets: [{
+            data: {{ chart_data.queue_data | safe }},
+            backgroundColor: ['#f6c23e', '#36b9cc', '#1cc88a'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: {
+            position: 'bottom'
+        }
+    }
+});
+
+// Refresh functionality
+document.getElementById('refreshBtn').addEventListener('click', function() {
+    location.reload();
+});
+
+// Auto-refresh every 5 minutes
+setInterval(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Queue Kiosk - HealthCare Clinic{% endblock %}
+
+{% block extra_css %}
+<style>
+.kiosk-container {
+    min-height: 80vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    color: white;
+}
+
+.service-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 200px;
+}
+
+.service-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-5px);
+}
+
+.service-card.selected {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: #28a745;
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.5);
+}
+
+.btn-kiosk {
+    background: #28a745;
+    border: none;
+    border-radius: 25px;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn-kiosk:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+}
+
+.priority-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.priority-faculty { background: #dc3545; }
+.priority-personnel { background: #fd7e14; }
+.priority-senior { background: #6f42c1; }
+.priority-regular { background: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kiosk-container p-5">
+    <div class="text-center mb-5">
+        <h1 class="display-3 fw-bold mb-3">
+            <i class="fas fa-ticket-alt"></i> Queue System
+        </h1>
+        <p class="lead">Select your service and get your queue number</p>
+    </div>
+
+    <form id="kioskForm" method="POST">
+        {{ form.hidden_tag() }}
+        
+        <!-- Patient Selection -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="text-center mb-4">1. Select or Register Patient</h3>
+                <div class="card bg-white text-dark">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.patient_id.label(class="form-label") }}
+                                {{ form.patient_id(class="form-select") }}
+                            </div>
+                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <a href="{{ url_for('patient_portal.register') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-user-plus"></i> New Patient Registration
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Selection -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="text-center mb-4">2. Select Service</h3>
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="service-card p-4 text-center h-100 d-flex flex-column justify-content-center position-relative" 
+                             data-service="consultation">
+                            <div class="priority-badge priority-regular">Regular</div>
+                            <i class="fas fa-stethoscope fa-3x mb-3"></i>
+                            <h5>General Consultation</h5>
+                            <p class="mb-0">Medical checkup and consultation</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="service-card p-4 text-center h-100 d-flex flex-column justify-content-center position-relative" 
+                             data-service="dental">
+                            <div class="priority-badge priority-regular">Regular</div>
+                            <i class="fas fa-tooth fa-3x mb-3"></i>
+                            <h5>Dental Care</h5>
+                            <p class="mb-0">Dental examination and treatment</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="service-card p-4 text-center h-100 d-flex flex-column justify-content-center position-relative" 
+                             data-service="laboratory">
+                            <div class="priority-badge priority-regular">Regular</div>
+                            <i class="fas fa-vial fa-3x mb-3"></i>
+                            <h5>Laboratory</h5>
+                            <p class="mb-0">Lab tests and medical examination</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="service-card p-4 text-center h-100 d-flex flex-column justify-content-center position-relative" 
+                             data-service="emergency">
+                            <div class="priority-badge priority-faculty">Emergency</div>
+                            <i class="fas fa-ambulance fa-3x mb-3"></i>
+                            <h5>Emergency</h5>
+                            <p class="mb-0">Urgent medical attention</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden service field -->
+        {{ form.service(style="display: none;") }}
+
+        <!-- Submit Button -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-kiosk" id="generateTicket" disabled>
+                <i class="fas fa-ticket-alt"></i> Generate Queue Ticket
+            </button>
+        </div>
+    </form>
+
+    <!-- Current Queue Status -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-white text-dark">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-ol"></i> Current Queue Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3 class="text-primary">{{ queue_stats.waiting }}</h3>
+                            <p class="mb-0">Waiting</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-warning">{{ queue_stats.in_progress }}</h3>
+                            <p class="mb-0">In Progress</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-success">{{ queue_stats.completed_today }}</h3>
+                            <p class="mb-0">Completed Today</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-info">{{ queue_stats.avg_wait_time }}</h3>
+                            <p class="mb-0">Avg Wait (min)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const serviceCards = document.querySelectorAll('.service-card');
+    const serviceField = document.getElementById('service');
+    const generateButton = document.getElementById('generateTicket');
+    const patientSelect = document.getElementById('patient_id');
+    
+    let selectedService = null;
+    
+    // Service card selection
+    serviceCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            serviceCards.forEach(c => c.classList.remove('selected'));
+            
+            // Add selected class to clicked card
+            this.classList.add('selected');
+            
+            // Set the service value
+            selectedService = this.dataset.service;
+            serviceField.value = selectedService;
+            
+            // Check if we can enable the generate button
+            checkFormComplete();
+        });
+    });
+    
+    // Patient selection change
+    patientSelect.addEventListener('change', checkFormComplete);
+    
+    function checkFormComplete() {
+        const hasPatient = patientSelect.value !== '';
+        const hasService = selectedService !== null;
+        
+        generateButton.disabled = !(hasPatient && hasService);
+        
+        if (hasPatient && hasService) {
+            generateButton.classList.add('btn-success');
+            generateButton.classList.remove('btn-secondary');
+        } else {
+            generateButton.classList.remove('btn-success');
+            generateButton.classList.add('btn-secondary');
+        }
+    }
+    
+    // Form submission
+    document.getElementById('kioskForm').addEventListener('submit', function(e) {
+        if (!selectedService || !patientSelect.value) {
+            e.preventDefault();
+            alert('Please select both a patient and a service.');
+            return false;
+        }
+        
+        // Show loading state
+        generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Ticket...';
+        generateButton.disabled = true;
+    });
+    
+    // Auto-refresh queue stats every 30 seconds
+    setInterval(function() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newStats = doc.querySelector('.card-body .row.text-center');
+                if (newStats) {
+                    document.querySelector('.card-body .row.text-center').innerHTML = newStats.innerHTML;
+                }
+            })
+            .catch(error => console.error('Error updating queue stats:', error));
+    }, 30000);
+});
+</script>
+{% endblock %}

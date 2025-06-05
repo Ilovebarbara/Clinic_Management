@@ -1,0 +1,638 @@
+{% extends "base.html" %}
+
+{% block title %}Appointments - Clinic Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-calendar-alt"></i> Appointments Management</h2>
+            <p class="text-muted">Manage and monitor all clinic appointments</p>
+        </div>
+        <div>
+            <a href="{{ url_for('appointments.book') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus"></i> Book Appointment
+            </a>
+            <button class="btn btn-outline-secondary" onclick="refreshAppointments()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card bg-primary text-white">
+                <div class="stat-content">
+                    <div class="stat-number">24</div>
+                    <div class="stat-label">Today's Appointments</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-success text-white">
+                <div class="stat-content">
+                    <div class="stat-number">18</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-warning text-white">
+                <div class="stat-content">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-danger text-white">
+                <div class="stat-content">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Cancelled</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar View Toggle -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary active" id="listViewBtn">
+                                <i class="fas fa-list"></i> List View
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="calendarViewBtn">
+                                <i class="fas fa-calendar"></i> Calendar View
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div>
+                                <label class="form-label mb-0">Date Range:</label>
+                                <input type="date" class="form-control d-inline-block" id="startDate" style="width: auto;">
+                                <span class="mx-2">to</span>
+                                <input type="date" class="form-control d-inline-block" id="endDate" style="width: auto;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchAppointments" placeholder="Patient name, doctor, or ID...">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="no_show">No Show</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Doctor</label>
+                    <select class="form-select" id="doctorFilter">
+                        <option value="">All Doctors</option>
+                        <option value="1">Dr. John Smith</option>
+                        <option value="2">Dr. Sarah Johnson</option>
+                        <option value="3">Dr. Michael Brown</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Service</label>
+                    <select class="form-select" id="serviceFilter">
+                        <option value="">All Services</option>
+                        <option value="consultation">General Consultation</option>
+                        <option value="checkup">Health Checkup</option>
+                        <option value="vaccination">Vaccination</option>
+                        <option value="dental">Dental Care</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" id="priorityFilter">
+                        <option value="">All Priority</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="high">High</option>
+                        <option value="normal">Normal</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- List View -->
+    <div id="listView">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Appointments List</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="exportAppointments()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="printAppointments()">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllAppointments">
+                                </th>
+                                <th>Appointment ID</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Service</th>
+                                <th>Date & Time</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox" class="appointment-checkbox" data-id="1"></td>
+                                <td><strong>#APT001</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://via.placeholder.com/32" class="rounded-circle me-2" alt="Patient">
+                                        <div>
+                                            <div class="fw-bold">John Doe</div>
+                                            <small class="text-muted">ID: PAT001</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-bold">Dr. John Smith</div>
+                                        <small class="text-muted">General Medicine</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">General Consultation</span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-bold">Dec 28, 2024</div>
+                                        <small class="text-muted">10:30 AM</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">Confirmed</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">Normal</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="viewAppointment(1)" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="editAppointment(1)" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <div class="btn-group">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#" onclick="rescheduleAppointment(1)">
+                                                    <i class="fas fa-calendar-alt"></i> Reschedule
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="confirmAppointment(1)">
+                                                    <i class="fas fa-check"></i> Confirm
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="completeAppointment(1)">
+                                                    <i class="fas fa-check-circle"></i> Mark Complete
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="cancelAppointment(1)">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="appointment-checkbox" data-id="2"></td>
+                                <td><strong>#APT002</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://via.placeholder.com/32" class="rounded-circle me-2" alt="Patient">
+                                        <div>
+                                            <div class="fw-bold">Jane Smith</div>
+                                            <small class="text-muted">ID: PAT002</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-bold">Dr. Sarah Johnson</div>
+                                        <small class="text-muted">Pediatrics</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">Child Checkup</span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-bold">Dec 28, 2024</div>
+                                        <small class="text-muted">2:00 PM</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">Pending</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger">Urgent</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="viewAppointment(2)" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="editAppointment(2)" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <div class="btn-group">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#" onclick="rescheduleAppointment(2)">
+                                                    <i class="fas fa-calendar-alt"></i> Reschedule
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="confirmAppointment(2)">
+                                                    <i class="fas fa-check"></i> Confirm
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="completeAppointment(2)">
+                                                    <i class="fas fa-check-circle"></i> Mark Complete
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="cancelAppointment(2)">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- More appointment rows... -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Appointments pagination">
+                    <ul class="pagination justify-content-center mt-4">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Previous</a>
+                        </li>
+                        <li class="page-item active">
+                            <a class="page-link" href="#">1</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">2</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">3</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar View -->
+    <div id="calendarView" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Appointments Calendar</h5>
+            </div>
+            <div class="card-body">
+                <div id="appointmentsCalendar" style="min-height: 600px;">
+                    <!-- Calendar will be rendered here -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Calendar View</h5>
+                        <p class="text-muted">Interactive calendar will be rendered here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointment Details Modal -->
+<div class="modal fade" id="appointmentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Appointment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="appointmentDetailsContent">
+                    <!-- Appointment details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editCurrentAppointment()">Edit Appointment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule Modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reschedule Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rescheduleForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Date</label>
+                        <input type="date" class="form-control" name="new_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Time</label>
+                        <input type="time" class="form-control" name="new_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Reschedule</label>
+                        <textarea class="form-control" name="reason" rows="3" placeholder="Optional reason..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="notify_patient" id="notifyPatient" checked>
+                        <label class="form-check-label" for="notifyPatient">
+                            Notify patient about reschedule
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Reschedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Appointments management JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // View toggle
+    document.getElementById('listViewBtn').addEventListener('click', function() {
+        document.getElementById('listView').style.display = 'block';
+        document.getElementById('calendarView').style.display = 'none';
+        this.classList.add('active');
+        document.getElementById('calendarViewBtn').classList.remove('active');
+    });
+
+    document.getElementById('calendarViewBtn').addEventListener('click', function() {
+        document.getElementById('listView').style.display = 'none';
+        document.getElementById('calendarView').style.display = 'block';
+        this.classList.add('active');
+        document.getElementById('listViewBtn').classList.remove('active');
+        // Initialize calendar if needed
+        initializeCalendar();
+    });
+
+    // Select all functionality
+    document.getElementById('selectAllAppointments').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.appointment-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    // Set default date range (today to next week)
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    document.getElementById('startDate').value = today.toISOString().split('T')[0];
+    document.getElementById('endDate').value = nextWeek.toISOString().split('T')[0];
+
+    // Search and filter functionality
+    document.getElementById('searchAppointments').addEventListener('input', debounce(filterAppointments, 300));
+    document.getElementById('statusFilter').addEventListener('change', filterAppointments);
+    document.getElementById('doctorFilter').addEventListener('change', filterAppointments);
+    document.getElementById('serviceFilter').addEventListener('change', filterAppointments);
+    document.getElementById('priorityFilter').addEventListener('change', filterAppointments);
+
+    // Reschedule form submission
+    document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        // Implement reschedule logic
+        console.log('Rescheduling appointment...');
+        bootstrap.Modal.getInstance(document.getElementById('rescheduleModal')).hide();
+    });
+});
+
+// Appointment action functions
+function viewAppointment(id) {
+    // Load appointment details
+    console.log('Viewing appointment:', id);
+    const modal = new bootstrap.Modal(document.getElementById('appointmentDetailsModal'));
+    
+    // Simulate loading appointment details
+    document.getElementById('appointmentDetailsContent').innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Patient Information</h6>
+                <p><strong>Name:</strong> John Doe</p>
+                <p><strong>Age:</strong> 35</p>
+                <p><strong>Phone:</strong> +1 234 567 8901</p>
+                <p><strong>Email:</strong> john.doe@email.com</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Appointment Details</h6>
+                <p><strong>Date:</strong> Dec 28, 2024</p>
+                <p><strong>Time:</strong> 10:30 AM</p>
+                <p><strong>Doctor:</strong> Dr. John Smith</p>
+                <p><strong>Service:</strong> General Consultation</p>
+                <p><strong>Status:</strong> <span class="badge bg-success">Confirmed</span></p>
+            </div>
+        </div>
+        <hr>
+        <h6>Notes</h6>
+        <p>Patient complaining of headaches for the past week.</p>
+    `;
+    
+    modal.show();
+}
+
+function editAppointment(id) {
+    // Redirect to edit appointment page or show edit modal
+    console.log('Editing appointment:', id);
+    window.location.href = `/appointments/edit/${id}`;
+}
+
+function rescheduleAppointment(id) {
+    console.log('Rescheduling appointment:', id);
+    const modal = new bootstrap.Modal(document.getElementById('rescheduleModal'));
+    modal.show();
+}
+
+function confirmAppointment(id) {
+    if (confirm('Are you sure you want to confirm this appointment?')) {
+        console.log('Confirming appointment:', id);
+        // Implement confirm logic
+    }
+}
+
+function completeAppointment(id) {
+    if (confirm('Mark this appointment as completed?')) {
+        console.log('Completing appointment:', id);
+        // Implement complete logic
+    }
+}
+
+function cancelAppointment(id) {
+    if (confirm('Are you sure you want to cancel this appointment?')) {
+        console.log('Cancelling appointment:', id);
+        // Implement cancel logic
+    }
+}
+
+function refreshAppointments() {
+    console.log('Refreshing appointments...');
+    location.reload();
+}
+
+function exportAppointments() {
+    console.log('Exporting appointments...');
+    // Implement export functionality
+}
+
+function printAppointments() {
+    window.print();
+}
+
+function clearFilters() {
+    document.getElementById('searchAppointments').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('doctorFilter').value = '';
+    document.getElementById('serviceFilter').value = '';
+    document.getElementById('priorityFilter').value = '';
+    filterAppointments();
+}
+
+function filterAppointments() {
+    // Implement filtering logic
+    console.log('Filtering appointments...');
+}
+
+function initializeCalendar() {
+    // Initialize calendar view
+    console.log('Initializing calendar view...');
+}
+
+function editCurrentAppointment() {
+    // Edit the currently viewed appointment
+    bootstrap.Modal.getInstance(document.getElementById('appointmentDetailsModal')).hide();
+    // Implement edit logic
+}
+
+// Utility function for debouncing
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+
+<style>
+.stat-card {
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-content .stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.stat-content .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+#appointmentsCalendar {
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 5px;
+}
+</style>
+{% endblock %}

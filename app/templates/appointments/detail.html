@@ -1,0 +1,662 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Details - Clinic Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('appointments.list') }}">Appointments</a></li>
+                    <li class="breadcrumb-item active">Appointment #APT001</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-calendar-check"></i> Appointment Details</h2>
+        </div>
+        <div>
+            <button class="btn btn-outline-secondary me-2" onclick="printAppointment()">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <div class="btn-group">
+                <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-cog"></i> Actions
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="editAppointment()">
+                        <i class="fas fa-edit"></i> Edit Appointment
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="rescheduleAppointment()">
+                        <i class="fas fa-calendar-alt"></i> Reschedule
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="duplicateAppointment()">
+                        <i class="fas fa-copy"></i> Duplicate
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="confirmAppointment()">
+                        <i class="fas fa-check"></i> Confirm
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="completeAppointment()">
+                        <i class="fas fa-check-circle"></i> Mark Complete
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="cancelAppointment()">
+                        <i class="fas fa-times"></i> Cancel Appointment
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Status Banner -->
+    <div class="alert alert-success border-left-success mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="alert-heading mb-1">
+                    <i class="fas fa-check-circle"></i> Appointment Confirmed
+                </h5>
+                <p class="mb-0">This appointment has been confirmed and is scheduled for today.</p>
+            </div>
+            <div class="text-end">
+                <div class="h4 mb-0">10:30 AM</div>
+                <small class="text-muted">Dec 28, 2024</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Appointment Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Appointment Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold">Appointment ID:</td>
+                                    <td>#APT001</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Date & Time:</td>
+                                    <td>December 28, 2024 at 10:30 AM</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Duration:</td>
+                                    <td>30 minutes</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Service:</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">General Consultation</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Priority:</td>
+                                    <td>
+                                        <span class="badge bg-info">Normal</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold">Status:</td>
+                                    <td>
+                                        <span class="badge bg-success">Confirmed</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Created:</td>
+                                    <td>Dec 25, 2024 2:15 PM</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Created By:</td>
+                                    <td>Reception Desk</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fee:</td>
+                                    <td class="fw-bold text-success">$50.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Payment Status:</td>
+                                    <td>
+                                        <span class="badge bg-warning">Pending</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Patient Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <img src="https://via.placeholder.com/120" class="rounded-circle mb-3" alt="Patient Photo">
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewPatientProfile()">
+                                    <i class="fas fa-user"></i> View Profile
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="fw-bold">Full Name:</td>
+                                            <td>John Doe</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Patient ID:</td>
+                                            <td>PAT001</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Age:</td>
+                                            <td>35 years</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Gender:</td>
+                                            <td>Male</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Blood Type:</td>
+                                            <td>O+</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="fw-bold">Phone:</td>
+                                            <td>+1 234 567 8901</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Email:</td>
+                                            <td>john.doe@email.com</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Address:</td>
+                                            <td>123 Main St, City, State 12345</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Emergency Contact:</td>
+                                            <td>Jane Doe (+1 234 567 8902)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Insurance:</td>
+                                            <td>Blue Cross Blue Shield</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctor Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-md"></i> Doctor Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <img src="https://via.placeholder.com/100" class="rounded-circle mb-3" alt="Doctor Photo">
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewDoctorProfile()">
+                                    <i class="fas fa-user-md"></i> View Profile
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="fw-bold">Name:</td>
+                                            <td>Dr. John Smith</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Specialization:</td>
+                                            <td>General Medicine</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Experience:</td>
+                                            <td>15 years</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="fw-bold">Phone:</td>
+                                            <td>+1 234 567 8900</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Email:</td>
+                                            <td>dr.smith@clinic.com</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Room:</td>
+                                            <td>Room 101</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointment Notes -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Appointment Notes</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editNotes()">
+                        <i class="fas fa-edit"></i> Edit Notes
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="appointmentNotes">
+                        <p class="mb-2"><strong>Reason for Visit:</strong></p>
+                        <p>Patient complaining of persistent headaches for the past week. Headaches are more severe in the morning and accompanied by mild nausea.</p>
+                        
+                        <p class="mb-2 mt-3"><strong>Symptoms:</strong></p>
+                        <ul>
+                            <li>Headaches (7 days)</li>
+                            <li>Morning nausea</li>
+                            <li>Mild dizziness</li>
+                            <li>Fatigue</li>
+                        </ul>
+                        
+                        <p class="mb-2 mt-3"><strong>Additional Notes:</strong></p>
+                        <p>Patient has been taking over-the-counter pain medication with minimal relief. No recent changes in medication or lifestyle. Requesting thorough examination.</p>
+                    </div>
+                    
+                    <div id="editNotesForm" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Reason for Visit</label>
+                            <textarea class="form-control" rows="2">Patient complaining of persistent headaches for the past week. Headaches are more severe in the morning and accompanied by mild nausea.</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Symptoms</label>
+                            <textarea class="form-control" rows="3">Headaches (7 days)
+Morning nausea
+Mild dizziness
+Fatigue</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" rows="3">Patient has been taking over-the-counter pain medication with minimal relief. No recent changes in medication or lifestyle. Requesting thorough examination.</textarea>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary me-2" onclick="saveNotes()">Save Notes</button>
+                            <button class="btn btn-secondary" onclick="cancelEditNotes()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="startConsultation()">
+                            <i class="fas fa-play"></i> Start Consultation
+                        </button>
+                        <button class="btn btn-primary" onclick="sendReminder()">
+                            <i class="fas fa-bell"></i> Send Reminder
+                        </button>
+                        <button class="btn btn-info" onclick="addToQueue()">
+                            <i class="fas fa-plus"></i> Add to Queue
+                        </button>
+                        <button class="btn btn-warning" onclick="rescheduleAppointment()">
+                            <i class="fas fa-calendar-alt"></i> Reschedule
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical History Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Medical History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-date">Dec 15, 2024</div>
+                            <div class="timeline-content">
+                                <div class="fw-bold">Annual Checkup</div>
+                                <small class="text-muted">Dr. Sarah Johnson</small>
+                                <p class="small mb-0">Routine physical examination. All vitals normal.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Nov 20, 2024</div>
+                            <div class="timeline-content">
+                                <div class="fw-bold">Blood Test</div>
+                                <small class="text-muted">Lab Department</small>
+                                <p class="small mb-0">Complete blood count. Results within normal range.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Oct 10, 2024</div>
+                            <div class="timeline-content">
+                                <div class="fw-bold">Flu Vaccination</div>
+                                <small class="text-muted">Nurse Mary Wilson</small>
+                                <p class="small mb-0">Seasonal flu vaccination administered.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewFullHistory()">
+                            <i class="fas fa-history"></i> View Full History
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Allergies & Alerts -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Allergies & Alerts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-pills me-2"></i>
+                            <strong>Drug Allergy:</strong> Penicillin
+                        </div>
+                    </div>
+                    <div class="alert alert-info mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-leaf me-2"></i>
+                            <strong>Environmental:</strong> Pollen
+                        </div>
+                    </div>
+                    <div class="alert alert-danger mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-utensils me-2"></i>
+                            <strong>Food Allergy:</strong> Shellfish
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vital Signs -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat"></i> Latest Vital Signs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-1 text-primary">120/80</div>
+                                <small class="text-muted">Blood Pressure</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-1 text-success">72</div>
+                                <small class="text-muted">Heart Rate</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-1 text-info">98.6°F</div>
+                                <small class="text-muted">Temperature</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-1 text-warning">98%</div>
+                                <small class="text-muted">Oxygen Sat</small>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Last updated: Dec 15, 2024</small>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-phone"></i> Contact Options</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="callPatient()">
+                            <i class="fas fa-phone"></i> Call Patient
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="emailPatient()">
+                            <i class="fas fa-envelope"></i> Send Email
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="smsPatient()">
+                            <i class="fas fa-sms"></i> Send SMS
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule Modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reschedule Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rescheduleForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Date</label>
+                        <input type="date" class="form-control" name="new_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Time</label>
+                        <input type="time" class="form-control" name="new_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Reschedule</label>
+                        <textarea class="form-control" name="reason" rows="3" placeholder="Optional reason..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="notify_patient" id="notifyPatient" checked>
+                        <label class="form-check-label" for="notifyPatient">
+                            Notify patient about reschedule
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Reschedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Appointment detail JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Reschedule form submission
+    document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        console.log('Rescheduling appointment...');
+        bootstrap.Modal.getInstance(document.getElementById('rescheduleModal')).hide();
+    });
+});
+
+// Action functions
+function editAppointment() {
+    window.location.href = '/appointments/edit/1';
+}
+
+function rescheduleAppointment() {
+    const modal = new bootstrap.Modal(document.getElementById('rescheduleModal'));
+    modal.show();
+}
+
+function duplicateAppointment() {
+    if (confirm('Create a new appointment with the same details?')) {
+        console.log('Duplicating appointment...');
+    }
+}
+
+function confirmAppointment() {
+    if (confirm('Confirm this appointment?')) {
+        console.log('Confirming appointment...');
+    }
+}
+
+function completeAppointment() {
+    if (confirm('Mark this appointment as completed?')) {
+        console.log('Completing appointment...');
+    }
+}
+
+function cancelAppointment() {
+    if (confirm('Are you sure you want to cancel this appointment?')) {
+        console.log('Cancelling appointment...');
+    }
+}
+
+function startConsultation() {
+    console.log('Starting consultation...');
+    window.location.href = '/consultations/start/1';
+}
+
+function sendReminder() {
+    console.log('Sending reminder...');
+}
+
+function addToQueue() {
+    console.log('Adding to queue...');
+}
+
+function viewPatientProfile() {
+    window.location.href = '/patients/detail/1';
+}
+
+function viewDoctorProfile() {
+    window.location.href = '/staff/profile/1';
+}
+
+function viewFullHistory() {
+    window.location.href = '/patients/1/medical-history';
+}
+
+function editNotes() {
+    document.getElementById('appointmentNotes').style.display = 'none';
+    document.getElementById('editNotesForm').style.display = 'block';
+}
+
+function saveNotes() {
+    console.log('Saving notes...');
+    document.getElementById('appointmentNotes').style.display = 'block';
+    document.getElementById('editNotesForm').style.display = 'none';
+}
+
+function cancelEditNotes() {
+    document.getElementById('appointmentNotes').style.display = 'block';
+    document.getElementById('editNotesForm').style.display = 'none';
+}
+
+function callPatient() {
+    window.location.href = 'tel:+12345678901';
+}
+
+function emailPatient() {
+    window.location.href = 'mailto:john.doe@email.com';
+}
+
+function smsPatient() {
+    window.location.href = 'sms:+12345678901';
+}
+
+function printAppointment() {
+    window.print();
+}
+</script>
+
+<style>
+.border-left-success {
+    border-left: 4px solid #28a745 !important;
+}
+
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 20px;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 20px;
+    bottom: -20px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #007bff;
+}
+
+.timeline-date {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 3px solid #007bff;
+}
+
+@media print {
+    .btn, .dropdown, .card-header .btn {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
