@@ -1,67 +1,58 @@
 <?php
-
 /**
  * University Clinic Management System
- * Main Application Entry Point
+ * Main Entry Point
+ * 
+ * Clean, production-ready clinic management system
  */
 
-// Start the application
+// Start session first
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Load the core system
+require_once __DIR__ . '/minimal-system.php';
+
+// Load application routing
 require_once __DIR__ . '/app.php';
 
-?>
-$path = parse_url($request_uri, PHP_URL_PATH);
-$query = parse_url($request_uri, PHP_URL_QUERY);
-
-// Simple routing
-switch ($path) {
-    case '/':
-    case '/login':
-        include 'demo/login.php';
-        break;
+// Initialize the application
+try {
+    // Initialize database if function exists
+    if (function_exists('initializeDatabase')) {
+        initializeDatabase();
+    }
     
-    case '/dashboard':
-        include 'demo/dashboard.php';
-        break;
+    // Handle the request
+    if (isset($router)) {
+        $router->handle();
+    } else {
+        // Fallback routing if router not available
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $path = trim($path, '/');
+        
+        if (empty($path) || $path === 'index.php') {
+            include __DIR__ . '/demo/dashboard.php';
+        } elseif (file_exists(__DIR__ . "/demo/{$path}.php")) {
+            include __DIR__ . "/demo/{$path}.php";
+        } else {
+            http_response_code(404);
+            echo "404 - Page not found";
+        }
+    }
     
-    case '/kiosk':
-        include 'demo/kiosk.php';
-        break;
+} catch (Exception $e) {
+    // Handle any errors gracefully
+    http_response_code(500);
     
-    case '/mobile':
-        include 'demo/mobile.php';
-        break;
+    $debug = $_ENV['APP_DEBUG'] ?? false;
+    if ($debug) {
+        echo "Error: " . $e->getMessage();
+    } else {
+        echo "System temporarily unavailable. Please try again later.";
+    }
     
-    case '/patients':
-        include 'demo/patients.php';
-        break;
-    
-    case '/appointments':
-        include 'demo/appointments.php';
-        break;
-    
-    case '/queue':
-        include 'demo/queue.php';
-        break;
-    
-    default:
-        http_response_code(404);
-        echo '<!DOCTYPE html>
-        <html>
-        <head>
-            <title>404 - Page Not Found</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        </head>
-        <body>
-            <div class="container mt-5">
-                <div class="row justify-content-center">
-                    <div class="col-md-6 text-center">
-                        <h1>404</h1>
-                        <p>Page not found</p>
-                        <a href="/" class="btn btn-primary">Go Home</a>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>';
-        break;
+    // Log the error
+    error_log("Clinic System Error: " . $e->getMessage());
 }
