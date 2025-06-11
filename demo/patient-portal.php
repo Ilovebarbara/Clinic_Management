@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Sample patient data
 $patient_data = [
@@ -484,9 +486,8 @@ $patient_data = [
             </nav>
 
             <div class="user-info">
-                <div class="user-avatar">JD</div>
-                <span style="color: #666; font-weight: 500;"><?php echo $patient_data['name']; ?></span>
-                <a href="login.php" style="color: #F79489; text-decoration: none; margin-left: 1rem;">
+                <div class="user-avatar">JD</div>                <span style="color: #666; font-weight: 500;"><?php echo $patient_data['name']; ?></span>
+                <a href="/logout" style="color: #F79489; text-decoration: none; margin-left: 1rem;">
                     <i class="fas fa-sign-out-alt"></i>
                 </a>
             </div>

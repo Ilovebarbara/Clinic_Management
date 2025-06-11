@@ -313,14 +313,13 @@
                 <h2 class="category-title">
                     <i class="fas fa-desktop"></i>
                     Core System
-                </h2>
-                <div class="view-links">
-                    <a href="login.php" class="view-link">
+                </h2>                <div class="view-links">
+                    <a href="/login" class="view-link">
                         <i class="fas fa-sign-in-alt"></i>
                         Login System
                         <div class="description">Secure authentication gateway with role-based access control and beautiful glass morphism design.</div>
                     </a>
-                    <a href="dashboard.php" class="view-link">
+                    <a href="/dashboard" class="view-link">
                         <i class="fas fa-tachometer-alt"></i>
                         Main Dashboard
                         <div class="description">Central command center with statistics overview, quick actions, and system status monitoring.</div>

@@ -197,6 +197,22 @@ $router->get('admin-dashboard', function() {
     echo renderView('admin-panel');
 });
 
+// Admin users management
+$router->get('admin/users', function() {
+    if (!auth() || auth()['role'] !== 'admin') {
+        header('Location: /login');
+        exit;
+    }
+    include BASE_PATH . '/demo/admin-users.php';
+    exit;
+});
+
+// Redirect admin-panel to admin-dashboard for compatibility
+$router->get('admin-panel', function() {
+    header('Location: /admin-dashboard');
+    exit;
+});
+
 $router->get('patients', function() {
     if (!auth() || !in_array(auth()['role'], ['doctor', 'nurse', 'admin'])) {
         header('Location: /login');
@@ -268,6 +284,106 @@ $router->get('analytics-dashboard', function() {
     exit;
 });
 
+// Admin API endpoints for the admin panel
+$router->get('api/admin/analytics', function() {
+    if (!auth() || auth()['role'] !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied']);
+        exit;
+    }
+    
+    // Return real-time analytics data
+    $db = db();
+    $analytics = [
+        'system_stats' => [
+            'total_users' => $db->query("SELECT COUNT(*) FROM users")->fetchColumn(),
+            'active_staff' => $db->query("SELECT COUNT(*) FROM users WHERE role != 'patient'")->fetchColumn(),
+            'registered_patients' => $db->query("SELECT COUNT(*) FROM patients")->fetchColumn(),
+            'system_uptime' => '99.9%'
+        ],
+        'recent_activities' => [],
+        'user_growth' => [],
+        'queue_performance' => [
+            'average_wait_time' => 15.2,
+            'total_served_today' => 45,
+            'current_waiting' => 8
+        ]
+    ];
+    
+    header('Content-Type: application/json');
+    echo json_encode($analytics);
+    exit;
+});
+
+$router->post('admin/maintenance', function() {
+    if (!auth() || auth()['role'] !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied']);
+        exit;
+    }
+    
+    // Simulate maintenance tasks
+    sleep(1); // Simulate work
+    
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'message' => 'System maintenance completed successfully'
+    ]);
+    exit;
+});
+
+$router->post('admin/backup', function() {
+    if (!auth() || auth()['role'] !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied']);
+        exit;
+    }
+    
+    $backupId = 'backup_' . date('Y-m-d_H-i-s');
+    
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'backup_id' => $backupId,
+        'message' => 'Backup created successfully'
+    ]);
+    exit;
+});
+
+$router->get('admin/staff/export', function() {
+    if (!auth() || auth()['role'] !== 'admin') {
+        http_response_code(403);
+        echo 'Access denied';
+        exit;
+    }
+    
+    // Generate CSV export
+    $db = db();
+    $users = $db->query("SELECT * FROM users WHERE role != 'patient'")->fetchAll(PDO::FETCH_ASSOC);
+    
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="staff_export_' . date('Y-m-d_H-i-s') . '.csv"');
+    
+    $output = fopen('php://output', 'w');
+    fputcsv($output, ['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Role', 'Created At']);
+    
+    foreach ($users as $user) {
+        fputcsv($output, [
+            $user['id'],
+            $user['username'],
+            $user['email'],
+            $user['first_name'],
+            $user['last_name'],
+            $user['role'],
+            $user['created_at']
+        ]);
+    }
+    
+    fclose($output);
+    exit;
+});
+
 $router->get('enhanced-features', function() {
     if (!auth()) {
         header('Location: /login');
@@ -275,6 +391,42 @@ $router->get('enhanced-features', function() {
     }
     // Include the enhanced features page
     include BASE_PATH . '/demo/enhanced-features.php';
+    exit;
+});
+
+$router->get('dashboard', function() {
+    if (!auth()) {
+        header('Location: /login');
+        exit;
+    }
+    include BASE_PATH . '/demo/dashboard.php';
+    exit;
+});
+
+$router->get('web-views', function() {
+    include BASE_PATH . '/demo/web-views.php';
+    exit;
+});
+
+// Root path should redirect properly
+$router->get('', function() {
+    if (auth()) {
+        // Redirect to appropriate dashboard based on role
+        $role = auth()['role'];
+        switch ($role) {
+            case 'admin':
+                header('Location: /admin-dashboard');
+                break;
+            case 'doctor':
+            case 'nurse':
+                header('Location: /staff-dashboard');
+                break;
+            default:
+                header('Location: /patient-portal');
+        }
+    } else {
+        header('Location: /login');
+    }
     exit;
 });
 

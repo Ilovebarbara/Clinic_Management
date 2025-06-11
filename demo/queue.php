@@ -1,9 +1,11 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Simulate authentication check
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: /login');
     exit;
 }
 
@@ -671,11 +673,9 @@ $status_colors = [
                     <li><a href="queue.php" class="active">Queue</a></li>
                     <li><a href="medical-records.php">Records</a></li>
                 </ul>
-            </nav>
-
-            <div class="user-menu">
+            </nav>            <div class="user-menu">
                 <div class="user-avatar">AD</div>
-                <a href="login.php" style="color: #666; text-decoration: none;">
+                <a href="/logout" style="color: #666; text-decoration: none;">
                     <i class="fas fa-sign-out-alt"></i>
                 </a>
             </div>

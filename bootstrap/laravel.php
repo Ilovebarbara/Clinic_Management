@@ -6,7 +6,9 @@
  */
 
 // Start session and basic setup
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 define('LARAVEL_START', microtime(true));
 define('BASE_PATH', __DIR__ . '/..');
 
@@ -199,7 +201,9 @@ function login($user) {
 
 function logout() {
     session_destroy();
-    session_start();
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 }
 
 // Request helpers

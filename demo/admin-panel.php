@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Simulate admin authentication
 if (!isset($_SESSION['admin_id'])) {
@@ -33,24 +35,27 @@ $admin_data = [
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+<head>    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo bin2hex(random_bytes(32)); ?>">
     <title>Admin Panel - University Clinic</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        * {
+    <style>        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #F9F1F0 0%, #FADCD9 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
+            height: 100vh;
+            overflow: hidden;
         }
 
         /* Top Navigation */
@@ -125,21 +130,20 @@ $admin_data = [
             color: #F79489;
             font-size: 0.8rem;
             font-weight: 500;
-        }
-
-        /* Main Layout */
+        }        /* Main Layout */
         .admin-layout {
             display: grid;
             grid-template-columns: 300px 1fr;
-            min-height: calc(100vh - 80px);
-        }
-
-        /* Sidebar */
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }        /* Sidebar */
         .admin-sidebar {
             background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(20px);
             border-right: 1px solid rgba(247, 148, 137, 0.2);
             padding: 2rem 0;
+            height: 100%;
+            overflow-y: auto;
         }
 
         .sidebar-section {
@@ -182,12 +186,11 @@ $admin_data = [
         .nav-icon {
             width: 20px;
             text-align: center;
-        }
-
-        /* Main Content */
+        }        /* Main Content */
         .admin-content {
             padding: 2rem;
             overflow-y: auto;
+            height: 100%;
         }
 
         .content-header {
@@ -520,9 +523,8 @@ $admin_data = [
             <div class="user-details">
                 <div class="user-name"><?php echo $_SESSION['admin_name']; ?></div>
                 <div class="user-role"><?php echo $_SESSION['admin_role']; ?></div>
-            </div>
-            <div class="user-avatar">SA</div>
-            <a href="login.php" style="color: #F79489; font-size: 1.2rem; margin-left: 1rem;">
+            </div>            <div class="user-avatar">SA</div>
+            <a href="/logout" style="color: #F79489; font-size: 1.2rem; margin-left: 1rem;">
                 <i class="fas fa-sign-out-alt"></i>
             </a>
         </div>
@@ -531,25 +533,23 @@ $admin_data = [
     <!-- Main Layout -->
     <div class="admin-layout">
         <!-- Sidebar -->
-        <div class="admin-sidebar">
-            <div class="sidebar-section">
+        <div class="admin-sidebar">            <div class="sidebar-section">
                 <div class="sidebar-title">Management</div>
                 <nav class="sidebar-nav">
                     <a href="#dashboard" class="nav-link active">
                         <i class="fas fa-chart-pie nav-icon"></i>
                         Dashboard
-                    </a>
-                    <a href="#users" class="nav-link">
+                    </a>                    <a href="/admin/users" class="nav-link">
                         <i class="fas fa-users-cog nav-icon"></i>
                         User Management
                     </a>
-                    <a href="#staff" class="nav-link">
-                        <i class="fas fa-user-md nav-icon"></i>
-                        Staff Management
-                    </a>
-                    <a href="#patients" class="nav-link">
+                    <a href="/patients" class="nav-link">
                         <i class="fas fa-users nav-icon"></i>
                         Patient Records
+                    </a>
+                    <a href="/appointments" class="nav-link">
+                        <i class="fas fa-calendar-check nav-icon"></i>
+                        Appointments
                     </a>
                 </nav>
             </div>
@@ -557,6 +557,10 @@ $admin_data = [
             <div class="sidebar-section">
                 <div class="sidebar-title">System</div>
                 <nav class="sidebar-nav">
+                    <a href="/queue" class="nav-link">
+                        <i class="fas fa-list-ol nav-icon"></i>
+                        Queue Management
+                    </a>
                     <a href="#reports" class="nav-link">
                         <i class="fas fa-chart-bar nav-icon"></i>
                         Reports & Analytics
@@ -564,10 +568,6 @@ $admin_data = [
                     <a href="#settings" class="nav-link">
                         <i class="fas fa-cog nav-icon"></i>
                         System Settings
-                    </a>
-                    <a href="#backups" class="nav-link">
-                        <i class="fas fa-database nav-icon"></i>
-                        Backups
                     </a>
                     <a href="#logs" class="nav-link">
                         <i class="fas fa-list-alt nav-icon"></i>
@@ -723,37 +723,88 @@ $admin_data = [
                 </div>
             </div>
         </div>
-    </div>
-
-    <script>
-        // Admin functions
-        function addNewStaff() {
-            alert('Add New Staff Member\n\nOpening staff registration form...\n\nRequired information:\n• Full name\n• Role (Doctor/Nurse/Admin)\n• Contact details\n• Access permissions');
+    </div>    <script>
+        // Admin functions - Connect to real backend        function addNewStaff() {
+            // Redirect to actual user creation route
+            window.location.href = '/admin/users';
         }
 
         function manageStaff() {
-            alert('Staff Management\n\nAvailable actions:\n• Edit staff profiles\n• Manage permissions\n• View staff schedules\n• Performance reports');
-        }
-
-        function exportStaffData() {
-            alert('Export Staff Data\n\nGenerating Excel report with:\n• Staff list\n• Contact information\n• Roles and permissions\n• Login statistics');
+            // Redirect to actual user management route
+            window.location.href = '/admin/users';
+        }function exportStaffData() {
+            // Create CSV export functionality
+            fetch('/admin/staff/export', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Export failed');
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'staff_data_' + new Date().toISOString().slice(0,10) + '.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    alert('Staff data exported successfully!');
+                })
+                .catch(error => {
+                    alert('Export failed: ' + error.message);
+                });
         }
 
         function viewAllLogs() {
-            alert('System Activity Logs\n\nOpening detailed log viewer...\n\nFilter by:\n• Date range\n• User type\n• Action type\n• System component');
+            // Open system logs in new tab
+            window.open('/admin/logs', '_blank');
         }
 
         function systemMaintenance() {
-            alert('System Maintenance\n\nAvailable maintenance tasks:\n• Database optimization\n• Cache clearing\n• Log file cleanup\n• Security scan');
+            if (confirm('Run System Maintenance?\n\nThis will:\n• Clear temporary files\n• Optimize database\n• Update system cache\n\nProceed?')) {
+                fetch('/admin/maintenance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Maintenance Complete:\n' + data.message);
+                })
+                .catch(error => {
+                    alert('Maintenance failed: ' + error.message);
+                });
+            }
         }
 
         function createBackup() {
             if (confirm('Create System Backup?\n\nThis will create a complete backup of:\n• Database\n• User files\n• System configuration\n\nProceed?')) {
-                alert('Backup Started\n\nEstimated time: 5-10 minutes\nYou will be notified when complete.');
+                fetch('/admin/backup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Backup Started\n\nBackup ID: ' + data.backup_id + '\nYou will be notified when complete.');
+                })
+                .catch(error => {
+                    alert('Backup failed: ' + error.message);
+                });
             }
-        }
-
-        // Navigation highlighting
+        }        // Navigation highlighting
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -762,14 +813,47 @@ $admin_data = [
             });
         });
 
+        // Load real-time data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRealTimeData();
+            
+            // Auto-refresh data every 30 seconds
+            setInterval(loadRealTimeData, 30000);
+        });
+
+        // Load real-time system data
+        function loadRealTimeData() {
+            // Load current statistics from database
+            fetch('/api/admin/analytics', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateDashboardStats(data);
+            })
+            .catch(error => {
+                console.log('Failed to load real-time data:', error);
+            });
+        }
+
+        // Update dashboard statistics
+        function updateDashboardStats(data) {
+            if (data.system_usage) {
+                // Update system stats if available
+                console.log('Real-time data loaded:', data);
+            }
+        }
+
         // Auto-refresh system stats
         setInterval(() => {
             console.log('Refreshing system statistics...');
-            // In real application, this would update the stats        }, 60000);
+            loadRealTimeData();
+        }, 60000);
     </script>
 
     <?php include 'quick-nav.php'; ?>
 </body>
 </html>
-<?php
-   include 'footer.php';

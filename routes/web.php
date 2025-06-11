@@ -18,6 +18,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\KioskController;
 
 // Authentication Routes
@@ -32,8 +33,7 @@ Route::middleware('auth')->group(function () {
     
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // User Management (Super Admin only)
+      // User Management (Super Admin only)
     Route::middleware('superadmin')->prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('users.index');
         Route::get('/create', [UserController::class, 'create'])->name('users.create');
@@ -41,6 +41,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+    
+    // Admin Management (Super Admin only)
+    Route::middleware('superadmin')->prefix('admin')->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/staff/export', [AdminController::class, 'exportStaffData'])->name('admin.staff.export');
+        Route::post('/maintenance', [AdminController::class, 'systemMaintenance'])->name('admin.maintenance');
+        Route::post('/backup', [AdminController::class, 'createBackup'])->name('admin.backup');
+        Route::get('/logs', [AdminController::class, 'getLogs'])->name('admin.logs');
+        Route::get('/analytics', [AdminController::class, 'getAnalytics'])->name('admin.analytics');
     });
     
     // Profile Management

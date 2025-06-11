@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\QueueController;
 use App\Http\Controllers\Api\MedicalRecordController;
+use App\Http\Controllers\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -117,6 +118,13 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'can:system-admin'])->group(
     Route::post('/users', [AuthController::class, 'createUser']);
     Route::put('/users/{user}', [AuthController::class, 'updateUser']);
     Route::delete('/users/{user}', [AuthController::class, 'deleteUser']);
+    
+    // Enhanced admin functionality
+    Route::get('/staff/export', [AdminController::class, 'exportStaffData']);
+    Route::post('/maintenance', [AdminController::class, 'systemMaintenance']);
+    Route::post('/backup', [AdminController::class, 'createBackup']);
+    Route::get('/logs', [AdminController::class, 'getLogs']);
+    Route::get('/analytics', [AdminController::class, 'getAnalytics']);
     
     Route::get('/reports/daily', function () {
         return response()->json(['message' => 'Daily report functionality to be implemented']);

@@ -7,57 +7,56 @@
         <div class="quick-nav-header">
             <h4>Quick Navigation</h4>
             <button class="nav-close" onclick="toggleQuickNav()">×</button>
-        </div>
-        <div class="nav-section">
+        </div>        <div class="nav-section">
             <div class="nav-section-title">Web Interfaces</div>
-            <a href="patient-portal.php" class="nav-link">
+            <a href="/patient-portal" class="nav-link">
                 <i class="fas fa-user-injured"></i> Patient Portal
             </a>
-            <a href="staff-dashboard.php" class="nav-link">
+            <a href="/staff-dashboard" class="nav-link">
                 <i class="fas fa-user-md"></i> Staff Dashboard
             </a>
-            <a href="admin-panel.php" class="nav-link">
+            <a href="/admin-dashboard" class="nav-link">
                 <i class="fas fa-cog"></i> Admin Panel
             </a>
         </div>
         <div class="nav-section">
             <div class="nav-section-title">Core System</div>
-            <a href="login.php" class="nav-link">
+            <a href="/login" class="nav-link">
                 <i class="fas fa-sign-in-alt"></i> Login
             </a>
-            <a href="dashboard.php" class="nav-link">
+            <a href="/dashboard" class="nav-link">
                 <i class="fas fa-tachometer-alt"></i> Dashboard
             </a>
-            <a href="patients.php" class="nav-link">
+            <a href="/patients" class="nav-link">
                 <i class="fas fa-users"></i> Patients
             </a>
-            <a href="appointments.php" class="nav-link">
+            <a href="/appointments" class="nav-link">
                 <i class="fas fa-calendar-check"></i> Appointments
             </a>
         </div>        <div class="nav-section">
             <div class="nav-section-title">Specialized</div>
-            <a href="kiosk.php" class="nav-link">
+            <a href="/kiosk" class="nav-link">
                 <i class="fas fa-desktop"></i> Kiosk
             </a>
-            <a href="mobile.php" class="nav-link">
+            <a href="/mobile" class="nav-link">
                 <i class="fas fa-mobile-alt"></i> Mobile
             </a>
-            <a href="queue.php" class="nav-link">
+            <a href="/queue" class="nav-link">
                 <i class="fas fa-list-ol"></i> Queue
             </a>
-            <a href="enhanced-queue.php" class="nav-link">
+            <a href="/enhanced-queue" class="nav-link">
                 <i class="fas fa-rocket"></i> Enhanced Queue
             </a>
-            <a href="analytics-dashboard.php" class="nav-link">
+            <a href="/analytics-dashboard" class="nav-link">
                 <i class="fas fa-chart-line"></i> Analytics
             </a>
-            <a href="medical-records.php" class="nav-link">
+            <a href="/medical-records" class="nav-link">
                 <i class="fas fa-file-medical"></i> Records
             </a>
         </div>
         <div class="nav-section">
             <div class="nav-section-title">Overview</div>
-            <a href="web-views.php" class="nav-link">
+            <a href="/web-views" class="nav-link">
                 <i class="fas fa-home"></i> All Interfaces
             </a>
         </div>

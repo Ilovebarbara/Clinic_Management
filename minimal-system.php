@@ -6,7 +6,9 @@
  */
 
 // Basic setup
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -16,6 +18,9 @@ define('BASE_PATH', __DIR__);
 $_ENV['DB_CONNECTION'] = 'sqlite';
 $_ENV['DB_DATABASE'] = 'database/clinic.sqlite';
 $_ENV['APP_ENV'] = 'local';
+
+// Define debug constant
+define('APP_DEBUG', true);
 
 // Create database directory
 $dbDir = BASE_PATH . '/database';
@@ -134,33 +139,12 @@ function setupDefaultUsers() {
             password_hash('nurse123', PASSWORD_DEFAULT),
             'Emily',
             'Jones',
-            'nurse'
-        ]);
+            'nurse'        ]);
         
-        echo "✅ Created default users:\n";
-        echo "   Admin: admin@clinic.edu / admin123\n";
-        echo "   Doctor: dr.smith@clinic.edu / doctor123\n";
-        echo "   Nurse: nurse.jones@clinic.edu / nurse123\n";
         return true;
     }
     
     return false;
 }
-
-// Test the system
-echo "🚀 MINIMAL LARAVEL SYSTEM STARTING...\n";
-echo "Database: " . (db() ? "✅ Connected" : "❌ Failed") . "\n";
-
-setupDefaultUsers();
-
-// Test login
-if (login('admin', 'admin123')) {
-    echo "Authentication: ✅ Working\n";
-} else {
-    echo "Authentication: ❌ Failed\n";
-}
-
-echo "System Status: ✅ READY\n";
-echo "Next: Create web interface\n";
 
 ?>

@@ -1,24 +1,26 @@
 <?php
 /**
  * University Clinic Management System
- * Main Application Entry Point
+ * Public Entry Point (Laravel-like structure)
  * 
  * Clean, production-ready clinic management system
  */
 
-// Load the core system
-require_once __DIR__ . '/minimal-system.php';
+// Load the core system from parent directory
+require_once dirname(__DIR__) . '/minimal-system.php';
 
-// Load application routing
-require_once __DIR__ . '/app.php';
+// Load application routing from parent directory
+require_once dirname(__DIR__) . '/app.php';
 
 // Initialize the application
 try {
-    // Start session
-    session_start();
+    // Start session if not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     
-    // Initialize database
-    initializeDatabase();
+    // Initialize database by calling db() function
+    db(); // This will create tables if they don't exist
     
     // Handle the request
     $router->handle();
@@ -27,12 +29,11 @@ try {
     // Handle any errors gracefully
     http_response_code(500);
     
-    if ($_ENV['APP_DEBUG'] ?? false) {
+    if (defined('APP_DEBUG') && APP_DEBUG) {
         echo "Error: " . $e->getMessage();
     } else {
         echo "System temporarily unavailable. Please try again later.";
     }
-    
-    // Log the error
+      // Log the error
     error_log("Clinic System Error: " . $e->getMessage());
 }

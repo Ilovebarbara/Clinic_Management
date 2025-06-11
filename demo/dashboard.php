@@ -419,12 +419,11 @@
             </a>
             
             <nav>
-                <ul class="nav-menu">
-                    <li><a href="dashboard.php" class="nav-link active">Dashboard</a></li>
-                    <li><a href="patients.php" class="nav-link">Patients</a></li>
-                    <li><a href="appointments.php" class="nav-link">Appointments</a></li>
-                    <li><a href="queue.php" class="nav-link">Queue</a></li>
-                    <li><a href="medical-records.php" class="nav-link">Records</a></li>
+                <ul class="nav-menu">                    <li><a href="/dashboard" class="nav-link active">Dashboard</a></li>
+                    <li><a href="/patients" class="nav-link">Patients</a></li>
+                    <li><a href="/appointments" class="nav-link">Appointments</a></li>
+                    <li><a href="/queue" class="nav-link">Queue</a></li>
+                    <li><a href="/medical-records" class="nav-link">Records</a></li>
                 </ul>
             </nav>
             
@@ -515,7 +514,7 @@
         <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="actions-grid">
-                <a href="patients.php" class="action-card">
+                <a href="/patients" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-user-plus"></i>
                     </div>
@@ -523,7 +522,7 @@
                     <div class="action-desc">Register new patient</div>
                 </a>
                 
-                <a href="appointments.php" class="action-card">
+                <a href="/appointments" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-calendar-plus"></i>
                     </div>
@@ -531,7 +530,7 @@
                     <div class="action-desc">Schedule consultation</div>
                 </a>
                 
-                <a href="queue.php" class="action-card">
+                <a href="/queue" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-list-ol"></i>
                     </div>
@@ -539,7 +538,7 @@
                     <div class="action-desc">View waiting list</div>
                 </a>
                 
-                <a href="medical-records.php" class="action-card">
+                <a href="/medical-records" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-notes-medical"></i>
                     </div>
@@ -547,7 +546,7 @@
                     <div class="action-desc">View patient history</div>
                 </a>
                 
-                <a href="kiosk.php" class="action-card">
+                <a href="/kiosk" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-desktop"></i>
                     </div>
@@ -555,7 +554,7 @@
                     <div class="action-desc">Self-service terminal</div>
                 </a>
                 
-                <a href="mobile.php" class="action-card">
+                <a href="/mobile" class="action-card">
                     <div class="action-icon">
                         <i class="fas fa-mobile-alt"></i>
                     </div>

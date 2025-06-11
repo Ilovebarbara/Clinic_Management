@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Simulate authentication check
 if (!isset($_SESSION['staff_id'])) {
@@ -542,8 +544,7 @@ $dashboard_data = [
             <a href="#settings" class="nav-item">
                 <i class="fas fa-cog"></i>
                 Settings
-            </a>
-            <a href="login.php" class="nav-item">
+            </a>            <a href="/logout" class="nav-item">
                 <i class="fas fa-sign-out-alt"></i>
                 Logout
             </a>
