@@ -1,14 +1,14 @@
 <?php
 
-// Simple demo bootstrap file
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+/**
+ * University Clinic Management System
+ * Main Application Entry Point
+ */
 
-// Basic routing
-$request_uri = $_SERVER['REQUEST_URI'];
-$request_method = $_SERVER['REQUEST_METHOD'];
+// Start the application
+require_once __DIR__ . '/app.php';
 
-// Parse URL
+?>
 $path = parse_url($request_uri, PHP_URL_PATH);
 $query = parse_url($request_uri, PHP_URL_QUERY);
 
