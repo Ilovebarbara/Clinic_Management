@@ -19,10 +19,8 @@ require_once __DIR__ . '/app.php';
 
 // Initialize the application
 try {
-    // Initialize database if function exists
-    if (function_exists('initializeDatabase')) {
-        initializeDatabase();
-    }
+    // Initialize database by calling db() function
+    db(); // This will create tables if they don't exist
     
     // Handle the request
     if (isset($router)) {
